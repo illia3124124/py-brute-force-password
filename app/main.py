@@ -1,9 +1,7 @@
-import multiprocessing
-import string
 import time
 
 from hashlib import sha256
-from itertools import product
+
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -23,37 +21,29 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(target_hash) -> None:
-    digits = string.digits
-    duration = time.perf_counter()
-    for combination in product(digits, repeat=8):
-        possible_password = "".join(combination)
-
-        if sha256_hash_str(possible_password) == target_hash:
-            print(f"Password found: {possible_password}")
+def brute_force_password() -> None:
+    found_password = []
+    start = time.perf_counter()
+    for i in range(100_000_000):
+        if len(found_password) == len(PASSWORDS_TO_BRUTE_FORCE):
             break
-    sync_duration = time.perf_counter() - duration
-    print(f"Duration: {sync_duration}")
 
+        possible_password = f"{i:08d}"
 
-def get_passwords() -> None:
-    tasks = []
-    for target_hash in PASSWORDS_TO_BRUTE_FORCE:
-        tasks.append(
-            multiprocessing.Process(
-                target=brute_force_password,
-                args=(target_hash,),
-            )
-        )
-        tasks[-1].start()
+        if possible_password in found_password:
+            continue
 
-    for task in tasks:
-        task.join()
-
+        hashed_password = sha256_hash_str(possible_password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            found_password.append(possible_password)
+            print(f"Found password: {possible_password} for hash: {hashed_password}")
+            duration = time.perf_counter() - start
+            print(f"Duration: {duration}")
+            start = time.perf_counter()
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    get_passwords()
+    brute_force_password()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
